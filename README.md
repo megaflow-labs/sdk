@@ -33,7 +33,6 @@ npm install @megaflow-labs/sdk
 ## Quick Start
 
 ```typescript
-// Single import — no viem import needed ✨
 import { MegaFlowClient, MEGAETH_TOKENS, parseUnits, parseEther } from '@megaflow-labs/sdk';
 
 // fromPrivateKey() creates a fully connected client in one line
