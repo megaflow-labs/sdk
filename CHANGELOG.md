@@ -6,6 +6,39 @@ This project adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.1] – 2026-02-26
+
+### Improvements — Developer Experience
+
+#### Zero external imports (single SDK import pattern)
+- Added `MegaFlowClient.fromPrivateKey(privateKey)` static factory — no need to import `privateKeyToAccount` from viem
+- Added `MegaFlowClient.fromMnemonic(mnemonic)` static factory — create a client from a BIP-39 phrase in one line
+- Added `client.address` getter — access the connected account's address without reaching into viem internals
+
+#### viem re-exports
+The most commonly needed viem utilities are now re-exported from `@megaflow-labs/sdk` directly:
+- **Account factories**: `privateKeyToAccount`, `mnemonicToAccount`, `hdKeyToAccount`
+- **Unit helpers**: `parseUnits`, `parseEther`, `formatUnits`, `formatEther`
+- **Address utilities**: `isAddress`, `getAddress`, `zeroAddress`
+- **Encoding**: `encodeFunctionData`, `decodeFunctionData`, `encodeAbiParameters`, `decodeAbiParameters`
+- **Types**: `Address`, `Hash`, `Hex`, `PublicClient`, `WalletClient`, `Account`, `TransactionReceipt`
+
+Before (v0.1.0):
+```typescript
+import { MegaFlowClient } from '@megaflow-labs/sdk';
+import { privateKeyToAccount } from 'viem/accounts';
+import { parseUnits } from 'viem';
+const client = new MegaFlowClient().connectWithAccount(privateKeyToAccount('0x...'));
+```
+
+After (v0.1.1):
+```typescript
+import { MegaFlowClient, parseUnits } from '@megaflow-labs/sdk';
+const client = MegaFlowClient.fromPrivateKey('0x...');
+```
+
+---
+
 ## [0.1.0] – 2026-02-26
 
 ### Initial release

@@ -1,6 +1,6 @@
 {
   "name": "@megaflow-labs/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Batch transaction SDK for MegaETH — compose, simulate and execute multiple on-chain operations in a single atomic transaction.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

@@ -7,25 +7,25 @@
  * - ERC20 balance/allowance reads
  * - Multicall token state fetching
  *
- * @example
+ * @example Zero-config (recommended)
+ * ```typescript
+ * import { MegaFlowClient, parseUnits } from '@megaflow-labs/sdk';
+ *
+ * // One import, no viem required
+ * const client = MegaFlowClient.fromPrivateKey('0xYOUR_PRIVATE_KEY');
+ *
+ * const result = await client.batch()
+ *   .safeApprove(USDC, DEX_ROUTER, parseUnits('100', 6), 0n)
+ *   .swapExactTokensForTokens({ ... })
+ *   .executeSync(); // instant receipt on MegaETH
+ * ```
+ *
+ * @example With existing viem account
  * ```typescript
  * import { MegaFlowClient } from '@megaflow-labs/sdk';
  * import { privateKeyToAccount } from 'viem/accounts';
  *
- * const account = privateKeyToAccount('0x...');
- *
- * // Zero-config: uses MegaETH Mainnet by default
- * const client = new MegaFlowClient().connectWithAccount(account);
- *
- * // Read state
- * const balance = await client.getTokenBalance(USDC, account.address);
- * const allowance = await client.getAllowance(USDC, account.address, DEX_ROUTER);
- *
- * // Build + execute in one call
- * const result = await client.batch()
- *   .safeApprove(USDC, DEX_ROUTER, amountIn, allowance)
- *   .swapExactTokensForTokens({ ... })
- *   .executeSync(); // instant receipt on MegaETH
+ * const client = new MegaFlowClient().connectWithAccount(privateKeyToAccount('0x...'));
  * ```
  */
 
@@ -43,6 +43,7 @@ import {
     parseEther,
 } from 'viem';
 import { multicall } from 'viem/actions';
+import { privateKeyToAccount, mnemonicToAccount } from 'viem/accounts';
 import { megaethMainnet } from './chains';
 import { ERC20_ABI, MEGA_ROUTER_ABI, MEGAETH_TOKENS, MEGAETH_L1_BRIDGE, MAINNET_ROUTER_ADDRESS } from './constants';
 import type { MegaFlowClientConfig, MegaFlowExecutionResult, MegaFlowSyncResult } from './types';
@@ -80,8 +81,47 @@ export class MegaFlowClient {
     }
 
     // ==========================================================================
+    // Static factories — zero external imports needed
+    // ==========================================================================
+
+    /**
+     * Create a client from a raw private key.
+     * Eliminates the need to import `privateKeyToAccount` from viem/accounts.
+     *
+     * @example
+     * ```typescript
+     * import { MegaFlowClient, parseUnits } from '@megaflow-labs/sdk';
+     * const client = MegaFlowClient.fromPrivateKey('0xYOUR_PRIVATE_KEY');
+     * ```
+     */
+    static fromPrivateKey(privateKey: Hex, config: MegaFlowClientConfig = {}): MegaFlowClient {
+        const account = privateKeyToAccount(privateKey);
+        return new MegaFlowClient(config).connectWithAccount(account);
+    }
+
+    /**
+     * Create a client from a BIP-39 mnemonic phrase.
+     *
+     * @example
+     * ```typescript
+     * const client = MegaFlowClient.fromMnemonic('word1 word2 ... word12');
+     * ```
+     */
+    static fromMnemonic(mnemonic: string, config: MegaFlowClientConfig = {}): MegaFlowClient {
+        const account = mnemonicToAccount(mnemonic);
+        return new MegaFlowClient(config).connectWithAccount(account);
+    }
+
+    // ==========================================================================
     // Connection
     // ==========================================================================
+
+    /**
+     * The connected account's address, or undefined if not yet connected.
+     */
+    get address(): Address | undefined {
+        return (this.walletClient?.account as { address?: Address } | undefined)?.address;
+    }
 
     connectWithAccount(account: Account, rpcUrl?: string): this {
         const chain = this.config.chain ?? megaethMainnet;

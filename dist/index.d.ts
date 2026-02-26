@@ -1,4 +1,6 @@
 import { Chain, Address, Hex, Hash, TransactionReceipt, PublicClient, WalletClient, Account } from 'viem';
+export { Account, Address, Hash, Hex, PublicClient, TransactionReceipt, WalletClient, decodeAbiParameters, decodeFunctionData, encodeAbiParameters, encodeFunctionData, formatEther, formatUnits, getAddress, hexToBigInt, isAddress, numberToHex, parseEther, parseUnits, zeroAddress } from 'viem';
+export { hdKeyToAccount, mnemonicToAccount, privateKeyToAccount } from 'viem/accounts';
 
 /**
  * MegaETH Chain Definitions
@@ -1472,25 +1474,25 @@ declare class MegaFlowBuilder {
  * - ERC20 balance/allowance reads
  * - Multicall token state fetching
  *
- * @example
+ * @example Zero-config (recommended)
+ * ```typescript
+ * import { MegaFlowClient, parseUnits } from '@megaflow-labs/sdk';
+ *
+ * // One import, no viem required
+ * const client = MegaFlowClient.fromPrivateKey('0xYOUR_PRIVATE_KEY');
+ *
+ * const result = await client.batch()
+ *   .safeApprove(USDC, DEX_ROUTER, parseUnits('100', 6), 0n)
+ *   .swapExactTokensForTokens({ ... })
+ *   .executeSync(); // instant receipt on MegaETH
+ * ```
+ *
+ * @example With existing viem account
  * ```typescript
  * import { MegaFlowClient } from '@megaflow-labs/sdk';
  * import { privateKeyToAccount } from 'viem/accounts';
  *
- * const account = privateKeyToAccount('0x...');
- *
- * // Zero-config: uses MegaETH Mainnet by default
- * const client = new MegaFlowClient().connectWithAccount(account);
- *
- * // Read state
- * const balance = await client.getTokenBalance(USDC, account.address);
- * const allowance = await client.getAllowance(USDC, account.address, DEX_ROUTER);
- *
- * // Build + execute in one call
- * const result = await client.batch()
- *   .safeApprove(USDC, DEX_ROUTER, amountIn, allowance)
- *   .swapExactTokensForTokens({ ... })
- *   .executeSync(); // instant receipt on MegaETH
+ * const client = new MegaFlowClient().connectWithAccount(privateKeyToAccount('0x...'));
  * ```
  */
 
@@ -1501,6 +1503,30 @@ declare class MegaFlowClient {
     private wsClient?;
     private nonceCache;
     constructor(config?: MegaFlowClientConfig);
+    /**
+     * Create a client from a raw private key.
+     * Eliminates the need to import `privateKeyToAccount` from viem/accounts.
+     *
+     * @example
+     * ```typescript
+     * import { MegaFlowClient, parseUnits } from '@megaflow-labs/sdk';
+     * const client = MegaFlowClient.fromPrivateKey('0xYOUR_PRIVATE_KEY');
+     * ```
+     */
+    static fromPrivateKey(privateKey: Hex, config?: MegaFlowClientConfig): MegaFlowClient;
+    /**
+     * Create a client from a BIP-39 mnemonic phrase.
+     *
+     * @example
+     * ```typescript
+     * const client = MegaFlowClient.fromMnemonic('word1 word2 ... word12');
+     * ```
+     */
+    static fromMnemonic(mnemonic: string, config?: MegaFlowClientConfig): MegaFlowClient;
+    /**
+     * The connected account's address, or undefined if not yet connected.
+     */
+    get address(): Address | undefined;
     connectWithAccount(account: Account, rpcUrl?: string): this;
     connect(walletClient: WalletClient): this;
     /**
@@ -1588,26 +1614,23 @@ declare class MegaFlowClient {
  * atomic transaction through the MegaRouter contract. All operations
  * either succeed together or revert together.
  *
- * @example Quick start
+ * @example Quick start — single import
  * ```typescript
- * import { MegaFlowClient } from '@megaflow-labs/sdk';
- * import { privateKeyToAccount } from 'viem/accounts';
+ * import { MegaFlowClient, parseUnits } from '@megaflow-labs/sdk';
  *
- * const account = privateKeyToAccount('0x...');
+ * // No viem import needed — fromPrivateKey handles it internally
+ * const client = MegaFlowClient.fromPrivateKey('0xYOUR_PRIVATE_KEY');
  *
- * // Zero-config: uses MegaETH Mainnet by default
- * const client = new MegaFlowClient().connectWithAccount(account);
- *
- * const allowance = await client.getAllowance(USDC, account.address, DEX_ROUTER);
+ * const allowance = await client.getAllowance(USDC, client.address!, DEX_ROUTER);
  *
  * const result = await client.batch()
  *   .safeApprove(USDC, DEX_ROUTER, parseUnits('100', 6), allowance)
  *   .swapExactTokensForTokens({
  *     router: DEX_ROUTER,
  *     amountIn: parseUnits('100', 6),
- *     amountOutMin: parseEther('0.03'),
+ *     amountOutMin: parseUnits('0.03', 18),
  *     path: [USDC, WETH],
- *     to: account.address,
+ *     to: client.address!,
  *   })
  *   .executeSync(); // instant receipt on MegaETH
  * ```

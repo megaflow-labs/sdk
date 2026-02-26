@@ -7,26 +7,23 @@
  * atomic transaction through the MegaRouter contract. All operations
  * either succeed together or revert together.
  *
- * @example Quick start
+ * @example Quick start — single import
  * ```typescript
- * import { MegaFlowClient } from '@megaflow-labs/sdk';
- * import { privateKeyToAccount } from 'viem/accounts';
+ * import { MegaFlowClient, parseUnits } from '@megaflow-labs/sdk';
  *
- * const account = privateKeyToAccount('0x...');
+ * // No viem import needed — fromPrivateKey handles it internally
+ * const client = MegaFlowClient.fromPrivateKey('0xYOUR_PRIVATE_KEY');
  *
- * // Zero-config: uses MegaETH Mainnet by default
- * const client = new MegaFlowClient().connectWithAccount(account);
- *
- * const allowance = await client.getAllowance(USDC, account.address, DEX_ROUTER);
+ * const allowance = await client.getAllowance(USDC, client.address!, DEX_ROUTER);
  *
  * const result = await client.batch()
  *   .safeApprove(USDC, DEX_ROUTER, parseUnits('100', 6), allowance)
  *   .swapExactTokensForTokens({
  *     router: DEX_ROUTER,
  *     amountIn: parseUnits('100', 6),
- *     amountOutMin: parseEther('0.03'),
+ *     amountOutMin: parseUnits('0.03', 18),
  *     path: [USDC, WETH],
- *     to: account.address,
+ *     to: client.address!,
  *   })
  *   .executeSync(); // instant receipt on MegaETH
  * ```
@@ -96,6 +93,25 @@ export {
 // Core classes
 export { MegaFlowBuilder } from './builder';
 export { MegaFlowClient } from './client';
+
+// ============================================================================
+// viem re-exports — so consumers don't need a separate viem import
+// ============================================================================
+
+// Account factories
+export { privateKeyToAccount, mnemonicToAccount, hdKeyToAccount } from 'viem/accounts';
+
+// Unit helpers (most commonly used in DeFi)
+export { parseUnits, parseEther, formatUnits, formatEther, hexToBigInt, numberToHex } from 'viem';
+
+// Address utilities
+export { isAddress, getAddress, zeroAddress } from 'viem';
+
+// Encoding utilities
+export { encodeFunctionData, decodeFunctionData, encodeAbiParameters, decodeAbiParameters } from 'viem';
+
+// Common viem types — users can import `Address`, `Hash`, `Hex` from our SDK directly
+export type { Address, Hash, Hex, PublicClient, WalletClient, Account, TransactionReceipt } from 'viem';
 
 // ============================================================================
 // Convenience factory functions

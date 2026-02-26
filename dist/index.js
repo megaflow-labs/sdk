@@ -46,16 +46,32 @@ __export(index_exports, {
   createMegaFlowMainnet: () => createMegaFlowMainnet,
   createMegaFlowTestnet: () => createMegaFlowTestnet,
   deadlineInMinutes: () => deadlineInMinutes,
+  decodeAbiParameters: () => import_viem7.decodeAbiParameters,
+  decodeFunctionData: () => import_viem7.decodeFunctionData,
+  encodeAbiParameters: () => import_viem7.encodeAbiParameters,
+  encodeFunctionData: () => import_viem7.encodeFunctionData,
+  formatEther: () => import_viem5.formatEther,
+  formatUnits: () => import_viem5.formatUnits,
+  getAddress: () => import_viem6.getAddress,
   getKyberQuote: () => getKyberQuote,
+  hdKeyToAccount: () => import_accounts2.hdKeyToAccount,
+  hexToBigInt: () => import_viem5.hexToBigInt,
+  isAddress: () => import_viem6.isAddress,
   isUserRejection: () => isUserRejection,
   isValidAddress: () => isValidAddress,
   isValidHex: () => isValidHex,
   megaethChains: () => megaethChains,
   megaethMainnet: () => megaethMainnet,
   megaethTestnet: () => megaethTestnet,
+  mnemonicToAccount: () => import_accounts2.mnemonicToAccount,
+  numberToHex: () => import_viem5.numberToHex,
   parseBatchExecutedEvent: () => parseBatchExecutedEvent,
   parseCallExecutedEvents: () => parseCallExecutedEvents,
-  parseCallResults: () => parseCallResults
+  parseCallResults: () => parseCallResults,
+  parseEther: () => import_viem5.parseEther,
+  parseUnits: () => import_viem5.parseUnits,
+  privateKeyToAccount: () => import_accounts2.privateKeyToAccount,
+  zeroAddress: () => import_viem6.zeroAddress
 });
 module.exports = __toCommonJS(index_exports);
 
@@ -1078,7 +1094,8 @@ var MegaFlowBuilder = class {
 // src/client.ts
 var import_viem4 = require("viem");
 var import_actions = require("viem/actions");
-var MegaFlowClient = class {
+var import_accounts = require("viem/accounts");
+var MegaFlowClient = class _MegaFlowClient {
   constructor(config = {}) {
     // Local nonce cache: address → last used nonce
     this.nonceCache = /* @__PURE__ */ new Map();
@@ -1100,8 +1117,43 @@ var MegaFlowClient = class {
     }
   }
   // ==========================================================================
+  // Static factories — zero external imports needed
+  // ==========================================================================
+  /**
+   * Create a client from a raw private key.
+   * Eliminates the need to import `privateKeyToAccount` from viem/accounts.
+   *
+   * @example
+   * ```typescript
+   * import { MegaFlowClient, parseUnits } from '@megaflow-labs/sdk';
+   * const client = MegaFlowClient.fromPrivateKey('0xYOUR_PRIVATE_KEY');
+   * ```
+   */
+  static fromPrivateKey(privateKey, config = {}) {
+    const account = (0, import_accounts.privateKeyToAccount)(privateKey);
+    return new _MegaFlowClient(config).connectWithAccount(account);
+  }
+  /**
+   * Create a client from a BIP-39 mnemonic phrase.
+   *
+   * @example
+   * ```typescript
+   * const client = MegaFlowClient.fromMnemonic('word1 word2 ... word12');
+   * ```
+   */
+  static fromMnemonic(mnemonic, config = {}) {
+    const account = (0, import_accounts.mnemonicToAccount)(mnemonic);
+    return new _MegaFlowClient(config).connectWithAccount(account);
+  }
+  // ==========================================================================
   // Connection
   // ==========================================================================
+  /**
+   * The connected account's address, or undefined if not yet connected.
+   */
+  get address() {
+    return this.walletClient?.account?.address;
+  }
   connectWithAccount(account, rpcUrl) {
     const chain = this.config.chain ?? megaethMainnet;
     this.walletClient = (0, import_viem4.createWalletClient)({
@@ -1316,6 +1368,10 @@ var MegaFlowClient = class {
 };
 
 // src/index.ts
+var import_accounts2 = require("viem/accounts");
+var import_viem5 = require("viem");
+var import_viem6 = require("viem");
+var import_viem7 = require("viem");
 function createMegaFlow(config) {
   return new MegaFlowBuilder(config);
 }
@@ -1362,14 +1418,30 @@ function createMegaFlowClientTestnet(routerAddress, rpcUrl) {
   createMegaFlowMainnet,
   createMegaFlowTestnet,
   deadlineInMinutes,
+  decodeAbiParameters,
+  decodeFunctionData,
+  encodeAbiParameters,
+  encodeFunctionData,
+  formatEther,
+  formatUnits,
+  getAddress,
   getKyberQuote,
+  hdKeyToAccount,
+  hexToBigInt,
+  isAddress,
   isUserRejection,
   isValidAddress,
   isValidHex,
   megaethChains,
   megaethMainnet,
   megaethTestnet,
+  mnemonicToAccount,
+  numberToHex,
   parseBatchExecutedEvent,
   parseCallExecutedEvents,
-  parseCallResults
+  parseCallResults,
+  parseEther,
+  parseUnits,
+  privateKeyToAccount,
+  zeroAddress
 });

@@ -1030,7 +1030,8 @@ import {
   webSocket as webSocket2
 } from "viem";
 import { multicall } from "viem/actions";
-var MegaFlowClient = class {
+import { privateKeyToAccount, mnemonicToAccount } from "viem/accounts";
+var MegaFlowClient = class _MegaFlowClient {
   constructor(config = {}) {
     // Local nonce cache: address → last used nonce
     this.nonceCache = /* @__PURE__ */ new Map();
@@ -1052,8 +1053,43 @@ var MegaFlowClient = class {
     }
   }
   // ==========================================================================
+  // Static factories — zero external imports needed
+  // ==========================================================================
+  /**
+   * Create a client from a raw private key.
+   * Eliminates the need to import `privateKeyToAccount` from viem/accounts.
+   *
+   * @example
+   * ```typescript
+   * import { MegaFlowClient, parseUnits } from '@megaflow-labs/sdk';
+   * const client = MegaFlowClient.fromPrivateKey('0xYOUR_PRIVATE_KEY');
+   * ```
+   */
+  static fromPrivateKey(privateKey, config = {}) {
+    const account = privateKeyToAccount(privateKey);
+    return new _MegaFlowClient(config).connectWithAccount(account);
+  }
+  /**
+   * Create a client from a BIP-39 mnemonic phrase.
+   *
+   * @example
+   * ```typescript
+   * const client = MegaFlowClient.fromMnemonic('word1 word2 ... word12');
+   * ```
+   */
+  static fromMnemonic(mnemonic, config = {}) {
+    const account = mnemonicToAccount(mnemonic);
+    return new _MegaFlowClient(config).connectWithAccount(account);
+  }
+  // ==========================================================================
   // Connection
   // ==========================================================================
+  /**
+   * The connected account's address, or undefined if not yet connected.
+   */
+  get address() {
+    return this.walletClient?.account?.address;
+  }
   connectWithAccount(account, rpcUrl) {
     const chain = this.config.chain ?? megaethMainnet;
     this.walletClient = createWalletClient2({
@@ -1268,6 +1304,10 @@ var MegaFlowClient = class {
 };
 
 // src/index.ts
+import { privateKeyToAccount as privateKeyToAccount2, mnemonicToAccount as mnemonicToAccount2, hdKeyToAccount } from "viem/accounts";
+import { parseUnits, parseEther as parseEther2, formatUnits, formatEther, hexToBigInt, numberToHex } from "viem";
+import { isAddress, getAddress, zeroAddress } from "viem";
+import { encodeFunctionData as encodeFunctionData2, decodeFunctionData, encodeAbiParameters, decodeAbiParameters as decodeAbiParameters2 } from "viem";
 function createMegaFlow(config) {
   return new MegaFlowBuilder(config);
 }
@@ -1313,14 +1353,30 @@ export {
   createMegaFlowMainnet,
   createMegaFlowTestnet,
   deadlineInMinutes,
+  decodeAbiParameters2 as decodeAbiParameters,
+  decodeFunctionData,
+  encodeAbiParameters,
+  encodeFunctionData2 as encodeFunctionData,
+  formatEther,
+  formatUnits,
+  getAddress,
   getKyberQuote,
+  hdKeyToAccount,
+  hexToBigInt,
+  isAddress,
   isUserRejection,
   isValidAddress,
   isValidHex,
   megaethChains,
   megaethMainnet,
   megaethTestnet,
+  mnemonicToAccount2 as mnemonicToAccount,
+  numberToHex,
   parseBatchExecutedEvent,
   parseCallExecutedEvents,
-  parseCallResults
+  parseCallResults,
+  parseEther2 as parseEther,
+  parseUnits,
+  privateKeyToAccount2 as privateKeyToAccount,
+  zeroAddress
 };
