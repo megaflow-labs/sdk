@@ -26,25 +26,22 @@ On standard EVM chains, sending multiple transactions requires multiple wallet c
 npm install @megaflow-labs/sdk
 ```
 
-> Requires `viem ^2.0.0` (peer dependency) and Node.js ≥ 18.
+> **Node.js ≥ 18** required. `viem` is a peer dependency — but all commonly used viem utilities are **re-exported from the SDK** so you rarely need to install it separately.
 
 ---
 
 ## Quick Start
 
 ```typescript
-import { MegaFlowClient, MEGAETH_TOKENS } from '@megaflow-labs/sdk';
-import { privateKeyToAccount } from 'viem/accounts';
-import { parseUnits, parseEther } from 'viem';
+// Single import — no viem import needed ✨
+import { MegaFlowClient, MEGAETH_TOKENS, parseUnits, parseEther } from '@megaflow-labs/sdk';
 
-const account = privateKeyToAccount('0xYOUR_PRIVATE_KEY');
-
-// Zero-config: connects to MegaETH Mainnet automatically
-const client = new MegaFlowClient().connectWithAccount(account);
+// fromPrivateKey() creates a fully connected client in one line
+const client = MegaFlowClient.fromPrivateKey('0xYOUR_PRIVATE_KEY');
 
 // Read on-chain state
-const balance = await client.getTokenBalance(MEGAETH_TOKENS.WETH, account.address);
-const allowance = await client.getAllowance(USDC, account.address, DEX_ROUTER);
+const balance = await client.getTokenBalance(MEGAETH_TOKENS.WETH, client.address!);
+const allowance = await client.getAllowance(USDC, client.address!, DEX_ROUTER);
 
 // Build, simulate, and execute — all in one chain
 const result = await client
@@ -55,13 +52,20 @@ const result = await client
     amountIn: parseUnits('100', 6),
     amountOutMin: parseEther('0.03'),
     path: [USDC, MEGAETH_TOKENS.WETH],
-    to: account.address,
+    to: client.address!,
   })
   .executeSync(); // instant receipt on MegaETH (~10ms)
 
 console.log(`Tx hash: ${result.receipt.transactionHash}`);
 console.log(`Gas used: ${result.gasUsed}`);
 ```
+
+> **Using an existing viem account or WalletClient?** Both still work:
+> ```typescript
+> import { MegaFlowClient, privateKeyToAccount } from '@megaflow-labs/sdk';
+> const client = new MegaFlowClient().connectWithAccount(privateKeyToAccount('0x...'));
+> // or: .connect(myExistingWalletClient)
+> ```
 
 ---
 
@@ -94,15 +98,16 @@ const result = await builder.execute();
 
 Stateful high-level client. Extends MegaFlowBuilder with token reads, nonce management, and WebSocket support.
 
+**Factory methods (v0.1.1+):**
+
 ```typescript
-import { MegaFlowClient } from '@megaflow-labs/sdk';
+import { MegaFlowClient, parseUnits } from '@megaflow-labs/sdk';
 
-const client = new MegaFlowClient({ debug: true });
-client.connectWithAccount(account);
+// From private key
+const client = MegaFlowClient.fromPrivateKey('0xYOUR_KEY');
 
-// Read token state
-const bal = await client.getTokenBalance(token, address);
-const allowance = await client.getAllowance(token, address, spender);
+// From mnemonic
+const client2 = MegaFlowClient.fromMnemonic('word1 word2 ... word12');
 
 // Batch transfers to multiple recipients in one tx
 const result = await client
@@ -113,6 +118,20 @@ const result = await client
   ])
   .execute();
 ```
+
+---
+
+## What's re-exported from viem
+
+As of `v0.1.1`, you can import these directly from `@megaflow-labs/sdk` — no separate viem install needed for typical use:
+
+| Category | Exports |
+|---|---|
+| **Account factories** | `privateKeyToAccount`, `mnemonicToAccount`, `hdKeyToAccount` |
+| **Unit helpers** | `parseUnits`, `parseEther`, `formatUnits`, `formatEther` |
+| **Address utilities** | `isAddress`, `getAddress`, `zeroAddress` |
+| **Encoding** | `encodeFunctionData`, `decodeFunctionData`, `encodeAbiParameters` |
+| **Types** | `Address`, `Hash`, `Hex`, `PublicClient`, `WalletClient`, `Account` |
 
 ---
 
